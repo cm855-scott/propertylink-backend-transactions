@@ -1,0 +1,378 @@
+<head><meta charset="UTF-8"></head><h3 dir="auto" data-start="165" data-end="205" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">1. Prevent overlapping active leases</h3><pre class="overflow-visible! px-0!" data-start="207" data-end="873" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼe">-- PropertyLink: Prevent a unit from having overlapping active leases</span><span>
+
+DELIMITER </span><span class="ͼg">//</span><span>
+
+</span><span class="ͼg">CREATE</span><span> </span><span class="ͼg">TRIGGER</span><span> prevent_overlapping_active_lease
+</span><span class="ͼg">BEFORE</span><span> </span><span class="ͼg">INSERT</span><span> </span><span class="ͼg">ON</span><span> leases
+</span><span class="ͼg">FOR</span><span> </span><span class="ͼg">EACH</span><span> </span><span class="ͼg">ROW</span><span>
+</span><span class="ͼg">BEGIN</span><span>
+    </span><span class="ͼg">IF</span><span> NEW.status </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Active'</span><span> </span><span class="ͼg">THEN</span><span>
+
+        </span><span class="ͼg">IF</span><span> </span><span class="ͼg">EXISTS</span><span> (
+            </span><span class="ͼg">SELECT</span><span> </span><span class="ͼj">1</span><span>
+            </span><span class="ͼg">FROM</span><span> leases
+            </span><span class="ͼg">WHERE</span><span> unit_id </span><span class="ͼg">=</span><span> NEW.unit_id
+              </span><span class="ͼg">AND</span><span> status </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Active'</span><span>
+              </span><span class="ͼg">AND</span><span> NEW.start_date </span><span class="ͼg">&lt;=</span><span> end_date
+              </span><span class="ͼg">AND</span><span> NEW.end_date </span><span class="ͼg">&gt;=</span><span> start_date
+        ) </span><span class="ͼg">THEN</span><span>
+
+            </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+            </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span>
+            </span><span class="ͼk">'Cannot create lease: Unit already has an overlapping active lease'</span><span>;
+
+        </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+</span><span class="ͼg">END</span><span> </span><span class="ͼg">//</span><span>
+
+DELIMITER ;</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="875" data-end="896" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Also protect updates:</p><pre class="overflow-visible! px-0!" data-start="898" data-end="1543" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>DELIMITER </span><span class="ͼg">//</span><span>
+
+</span><span class="ͼg">CREATE</span><span> </span><span class="ͼg">TRIGGER</span><span> prevent_overlapping_active_lease_update
+</span><span class="ͼg">BEFORE</span><span> </span><span class="ͼg">UPDATE</span><span> </span><span class="ͼg">ON</span><span> leases
+</span><span class="ͼg">FOR</span><span> </span><span class="ͼg">EACH</span><span> </span><span class="ͼg">ROW</span><span>
+</span><span class="ͼg">BEGIN</span><span>
+    </span><span class="ͼg">IF</span><span> NEW.status </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Active'</span><span> </span><span class="ͼg">THEN</span><span>
+
+        </span><span class="ͼg">IF</span><span> </span><span class="ͼg">EXISTS</span><span> (
+            </span><span class="ͼg">SELECT</span><span> </span><span class="ͼj">1</span><span>
+            </span><span class="ͼg">FROM</span><span> leases
+            </span><span class="ͼg">WHERE</span><span> unit_id </span><span class="ͼg">=</span><span> NEW.unit_id
+              </span><span class="ͼg">AND</span><span> lease_id </span><span class="ͼg">&lt;&gt;</span><span> NEW.lease_id
+              </span><span class="ͼg">AND</span><span> status </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Active'</span><span>
+              </span><span class="ͼg">AND</span><span> NEW.start_date </span><span class="ͼg">&lt;=</span><span> end_date
+              </span><span class="ͼg">AND</span><span> NEW.end_date </span><span class="ͼg">&gt;=</span><span> start_date
+        ) </span><span class="ͼg">THEN</span><span>
+
+            </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+            </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span>
+            </span><span class="ͼk">'Cannot update lease: Unit already has an overlapping active lease'</span><span>;
+
+        </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+</span><span class="ͼg">END</span><span> </span><span class="ͼg">//</span><span>
+
+DELIMITER ;</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><hr data-start="1545" data-end="1548" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="1550" data-end="1579" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">2. Rent payment transaction</h1><p dir="auto" data-start="1581" data-end="1690" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">This is the main multi-step transaction. It records the payment and updates the tenant's outstanding balance.</p><pre class="overflow-visible! px-0!" data-start="1692" data-end="3107" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>DELIMITER </span><span class="ͼg">//</span><span>
+
+</span><span class="ͼg">CREATE</span><span> </span><span class="ͼg">PROCEDURE</span><span> process_rent_payment(
+    </span><span class="ͼg">IN</span><span> p_lease_id </span><span class="ͼm">INT</span><span>,
+    </span><span class="ͼg">IN</span><span> p_amount </span><span class="ͼm">DECIMAL</span><span>(</span><span class="ͼj">10</span><span>,</span><span class="ͼj">2</span><span>),
+    </span><span class="ͼg">IN</span><span> p_payment_date </span><span class="ͼm">DATE</span><span>,
+    </span><span class="ͼg">IN</span><span> p_payment_method </span><span class="ͼm">VARCHAR</span><span>(</span><span class="ͼj">50</span><span>)
+)
+</span><span class="ͼg">BEGIN</span><span>
+
+    </span><span class="ͼg">DECLARE</span><span> v_balance </span><span class="ͼm">DECIMAL</span><span>(</span><span class="ͼj">10</span><span>,</span><span class="ͼj">2</span><span>);
+    </span><span class="ͼg">DECLARE</span><span> v_tenant_id </span><span class="ͼm">INT</span><span>;
+
+    </span><span class="ͼe">-- Roll back everything if an error occurs</span><span>
+    </span><span class="ͼg">DECLARE</span><span> </span><span class="ͼg">EXIT</span><span> HANDLER </span><span class="ͼg">FOR</span><span> </span><span class="ͼg">SQLEXCEPTION</span><span>
+    </span><span class="ͼg">BEGIN</span><span>
+        </span><span class="ͼg">ROLLBACK</span><span>;
+        </span><span class="ͼg">RESIGNAL</span><span>;
+    </span><span class="ͼg">END</span><span>;
+
+    </span><span class="ͼg">START</span><span> </span><span class="ͼg">TRANSACTION</span><span>;
+
+    </span><span class="ͼe">-- Get tenant and lock the balance row</span><span>
+    </span><span class="ͼg">SELECT</span><span> tenant_id, outstanding_balance
+    </span><span class="ͼg">INTO</span><span> v_tenant_id, v_balance
+    </span><span class="ͼg">FROM</span><span> leases
+    </span><span class="ͼg">WHERE</span><span> lease_id </span><span class="ͼg">=</span><span> p_lease_id
+    </span><span class="ͼg">FOR</span><span> </span><span class="ͼg">UPDATE</span><span>;
+
+    </span><span class="ͼe">-- Validate lease</span><span>
+    </span><span class="ͼg">IF</span><span> v_tenant_id </span><span class="ͼg">IS</span><span> </span><span class="ͼj">NULL</span><span> </span><span class="ͼg">THEN</span><span>
+        </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+        </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Lease does not exist'</span><span>;
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼe">-- Validate payment</span><span>
+    </span><span class="ͼg">IF</span><span> p_amount </span><span class="ͼg">&lt;=</span><span> </span><span class="ͼj">0</span><span> </span><span class="ͼg">THEN</span><span>
+        </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+        </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Payment amount must be greater than zero'</span><span>;
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼe">-- Record payment</span><span>
+    </span><span class="ͼg">INSERT</span><span> </span><span class="ͼg">INTO</span><span> payments
+    (
+        lease_id,
+        tenant_id,
+        amount,
+        payment_date,
+        payment_method
+    )
+    </span><span class="ͼg">VALUES</span><span>
+    (
+        p_lease_id,
+        v_tenant_id,
+        p_amount,
+        p_payment_date,
+        p_payment_method
+    );
+
+    </span><span class="ͼe">-- Update outstanding balance</span><span>
+    </span><span class="ͼg">UPDATE</span><span> leases
+    </span><span class="ͼg">SET</span><span> outstanding_balance </span><span class="ͼg">=</span><span>
+        GREATEST(outstanding_balance </span><span class="ͼg">-</span><span> p_amount, </span><span class="ͼj">0</span><span>)
+    </span><span class="ͼg">WHERE</span><span> lease_id </span><span class="ͼg">=</span><span> p_lease_id;
+
+    </span><span class="ͼg">COMMIT</span><span>;
+
+</span><span class="ͼg">END</span><span> </span><span class="ͼg">//</span><span>
+
+DELIMITER ;</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="3109" data-end="3121" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Run it with:</p><pre class="overflow-visible! px-0!" data-start="3123" data-end="3220" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">CALL</span><span> process_rent_payment(
+    </span><span class="ͼj">1</span><span>,
+    </span><span class="ͼj">2500.00</span><span>,
+    </span><span class="ͼk">'2026-09-30'</span><span>,
+    </span><span class="ͼk">'Mobile Money'</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><hr data-start="3222" data-end="3225" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="3227" data-end="3267" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">3. Stored procedure — Post rent charge</h1><pre class="overflow-visible! px-0!" data-start="3269" data-end="4417" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>DELIMITER </span><span class="ͼg">//</span><span>
+
+</span><span class="ͼg">CREATE</span><span> </span><span class="ͼg">PROCEDURE</span><span> post_rent_charge(
+    </span><span class="ͼg">IN</span><span> p_lease_id </span><span class="ͼm">INT</span><span>,
+    </span><span class="ͼg">IN</span><span> p_amount </span><span class="ͼm">DECIMAL</span><span>(</span><span class="ͼj">10</span><span>,</span><span class="ͼj">2</span><span>),
+    </span><span class="ͼg">IN</span><span> p_charge_date </span><span class="ͼm">DATE</span><span>,
+    </span><span class="ͼg">IN</span><span> p_description </span><span class="ͼm">VARCHAR</span><span>(</span><span class="ͼj">255</span><span>)
+)
+</span><span class="ͼg">BEGIN</span><span>
+
+    </span><span class="ͼg">DECLARE</span><span> </span><span class="ͼg">EXIT</span><span> HANDLER </span><span class="ͼg">FOR</span><span> </span><span class="ͼg">SQLEXCEPTION</span><span>
+    </span><span class="ͼg">BEGIN</span><span>
+        </span><span class="ͼg">ROLLBACK</span><span>;
+        </span><span class="ͼg">RESIGNAL</span><span>;
+    </span><span class="ͼg">END</span><span>;
+
+    </span><span class="ͼg">START</span><span> </span><span class="ͼg">TRANSACTION</span><span>;
+
+    </span><span class="ͼe">-- Check that the lease exists</span><span>
+    </span><span class="ͼg">IF</span><span> </span><span class="ͼg">NOT</span><span> </span><span class="ͼg">EXISTS</span><span> (
+        </span><span class="ͼg">SELECT</span><span> </span><span class="ͼj">1</span><span>
+        </span><span class="ͼg">FROM</span><span> leases
+        </span><span class="ͼg">WHERE</span><span> lease_id </span><span class="ͼg">=</span><span> p_lease_id
+    ) </span><span class="ͼg">THEN</span><span>
+
+        </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+        </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Lease does not exist'</span><span>;
+
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼe">-- Validate charge</span><span>
+    </span><span class="ͼg">IF</span><span> p_amount </span><span class="ͼg">&lt;=</span><span> </span><span class="ͼj">0</span><span> </span><span class="ͼg">THEN</span><span>
+
+        </span><span class="ͼg">SIGNAL</span><span> </span><span class="ͼg">SQLSTATE</span><span> </span><span class="ͼk">'45000'</span><span>
+        </span><span class="ͼg">SET</span><span> MESSAGE_TEXT </span><span class="ͼg">=</span><span> </span><span class="ͼk">'Charge amount must be greater than zero'</span><span>;
+
+    </span><span class="ͼg">END</span><span> </span><span class="ͼg">IF</span><span>;
+
+    </span><span class="ͼe">-- Insert rent charge</span><span>
+    </span><span class="ͼg">INSERT</span><span> </span><span class="ͼg">INTO</span><span> rent_charges
+    (
+        lease_id,
+        amount,
+        charge_date,
+        description
+    )
+    </span><span class="ͼg">VALUES</span><span>
+    (
+        p_lease_id,
+        p_amount,
+        p_charge_date,
+        p_description
+    );
+
+    </span><span class="ͼe">-- Increase outstanding balance</span><span>
+    </span><span class="ͼg">UPDATE</span><span> leases
+    </span><span class="ͼg">SET</span><span> outstanding_balance </span><span class="ͼg">=</span><span>
+        outstanding_balance </span><span class="ͼg">+</span><span> p_amount
+    </span><span class="ͼg">WHERE</span><span> lease_id </span><span class="ͼg">=</span><span> p_lease_id;
+
+    </span><span class="ͼg">COMMIT</span><span>;
+
+</span><span class="ͼg">END</span><span> </span><span class="ͼg">//</span><span>
+
+DELIMITER ;</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="4419" data-end="4427" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Example:</p><pre class="overflow-visible! px-0!" data-start="4429" data-end="4529" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">CALL</span><span> post_rent_charge(
+    </span><span class="ͼj">1</span><span>,
+    </span><span class="ͼj">2500.00</span><span>,
+    </span><span class="ͼk">'2026-09-01'</span><span>,
+    </span><span class="ͼk">'September 2026 Rent'</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><hr data-start="4531" data-end="4534" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="4536" data-end="4589" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">4. Stored procedure — Calculate outstanding balance</h1><pre class="overflow-visible! px-0!" data-start="4591" data-end="5652" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>DELIMITER </span><span class="ͼg">//</span><span>
+
+</span><span class="ͼg">CREATE</span><span> </span><span class="ͼg">PROCEDURE</span><span> calculate_outstanding_balance(
+    </span><span class="ͼg">IN</span><span> p_lease_id </span><span class="ͼm">INT</span><span>
+)
+</span><span class="ͼg">BEGIN</span><span>
+
+    </span><span class="ͼg">SELECT</span><span>
+        l.lease_id,
+        l.tenant_id,
+
+        COALESCE(
+            (
+                </span><span class="ͼg">SELECT</span><span> SUM(rc.amount)
+                </span><span class="ͼg">FROM</span><span> rent_charges rc
+                </span><span class="ͼg">WHERE</span><span> rc.lease_id </span><span class="ͼg">=</span><span> l.lease_id
+            ),
+            </span><span class="ͼj">0</span><span>
+        ) </span><span class="ͼg">AS</span><span> total_charges,
+
+        COALESCE(
+            (
+                </span><span class="ͼg">SELECT</span><span> SUM(p.amount)
+                </span><span class="ͼg">FROM</span><span> payments p
+                </span><span class="ͼg">WHERE</span><span> p.lease_id </span><span class="ͼg">=</span><span> l.lease_id
+            ),
+            </span><span class="ͼj">0</span><span>
+        ) </span><span class="ͼg">AS</span><span> total_payments,
+
+        COALESCE(
+            (
+                </span><span class="ͼg">SELECT</span><span> SUM(rc.amount)
+                </span><span class="ͼg">FROM</span><span> rent_charges rc
+                </span><span class="ͼg">WHERE</span><span> rc.lease_id </span><span class="ͼg">=</span><span> l.lease_id
+            ),
+            </span><span class="ͼj">0</span><span>
+        )
+        </span><span class="ͼg">-</span><span>
+        COALESCE(
+            (
+                </span><span class="ͼg">SELECT</span><span> SUM(p.amount)
+                </span><span class="ͼg">FROM</span><span> payments p
+                </span><span class="ͼg">WHERE</span><span> p.lease_id </span><span class="ͼg">=</span><span> l.lease_id
+            ),
+            </span><span class="ͼj">0</span><span>
+        ) </span><span class="ͼg">AS</span><span> outstanding_balance
+
+    </span><span class="ͼg">FROM</span><span> leases l
+    </span><span class="ͼg">WHERE</span><span> l.lease_id </span><span class="ͼg">=</span><span> p_lease_id;
+
+</span><span class="ͼg">END</span><span> </span><span class="ͼg">//</span><span>
+
+DELIMITER ;</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="5654" data-end="5658" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Run:</p><pre class="overflow-visible! px-0!" data-start="5660" data-end="5709" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">CALL</span><span> calculate_outstanding_balance(</span><span class="ͼj">1</span><span>);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><hr data-start="5711" data-end="5714" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="5716" data-end="5736" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">5. Failure testing</h1><p dir="auto" data-start="5738" data-end="5812" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">This demonstrates that the transaction rolls back if something goes wrong.</p><h3 dir="auto" data-start="5814" data-end="5838" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Test invalid payment</h3><pre class="overflow-visible! px-0!" data-start="5840" data-end="5929" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">CALL</span><span> process_rent_payment(
+    </span><span class="ͼj">1</span><span>,
+    </span><span class="ͼg">-</span><span class="ͼj">500.00</span><span>,
+    </span><span class="ͼk">'2026-09-30'</span><span>,
+    </span><span class="ͼk">'Cash'</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="5931" data-end="5947" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Expected result:</p><pre class="overflow-visible! px-0!" data-start="5949" data-end="6001" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute end-1.5 top-1 z-2 md:end-2 md:top-1"></div><div class="relative"><div class="pe-11 pt-3"><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>Payment amount must be greater than zero</span></code></pre></div></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></pre><p dir="auto" data-start="6003" data-end="6096" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">The transaction is rolled back, so<span class="Apple-converted-space"> </span><strong data-start="6038" data-end="6095">no payment is inserted and the balance is not changed</strong>.</p><h3 dir="auto" data-start="6098" data-end="6120" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Test invalid lease</h3><pre class="overflow-visible! px-0!" data-start="6122" data-end="6215" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">CALL</span><span> process_rent_payment(
+    </span><span class="ͼj">99999</span><span>,
+    </span><span class="ͼj">2500.00</span><span>,
+    </span><span class="ͼk">'2026-09-30'</span><span>,
+    </span><span class="ͼk">'Cash'</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="6217" data-end="6226" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Expected:</p><pre class="overflow-visible! px-0!" data-start="6228" data-end="6260" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute end-1.5 top-1 z-2 md:end-2 md:top-1"></div><div class="relative"><div class="pe-11 pt-3"><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>Lease does not exist</span></code></pre></div></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></pre><p dir="auto" data-start="6262" data-end="6300" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Again, the transaction is rolled back.</p><hr data-start="6302" data-end="6305" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="6307" data-end="6335" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">6. Test overlapping leases</h1><p dir="auto" data-start="6337" data-end="6366" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">First create an active lease:</p><pre class="overflow-visible! px-0!" data-start="6368" data-end="6578" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">INSERT</span><span> </span><span class="ͼg">INTO</span><span> leases
+(
+    unit_id,
+    tenant_id,
+    start_date,
+    end_date,
+    status,
+    outstanding_balance
+)
+</span><span class="ͼg">VALUES</span><span>
+(
+    </span><span class="ͼj">1</span><span>,
+    </span><span class="ͼj">10</span><span>,
+    </span><span class="ͼk">'2026-01-01'</span><span>,
+    </span><span class="ͼk">'2026-12-31'</span><span>,
+    </span><span class="ͼk">'Active'</span><span>,
+    </span><span class="ͼj">0</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="6580" data-end="6618" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Now attempt another overlapping lease:</p><pre class="overflow-visible! px-0!" data-start="6620" data-end="6830" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span class="ͼg">INSERT</span><span> </span><span class="ͼg">INTO</span><span> leases
+(
+    unit_id,
+    tenant_id,
+    start_date,
+    end_date,
+    status,
+    outstanding_balance
+)
+</span><span class="ͼg">VALUES</span><span>
+(
+    </span><span class="ͼj">1</span><span>,
+    </span><span class="ͼj">20</span><span>,
+    </span><span class="ͼk">'2026-06-01'</span><span>,
+    </span><span class="ͼk">'2027-05-31'</span><span>,
+    </span><span class="ͼk">'Active'</span><span>,
+    </span><span class="ͼj">0</span><span>
+);</span></code></pre></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></div></div></pre><p dir="auto" data-start="6832" data-end="6841" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">Expected:</p><pre class="overflow-visible! px-0!" data-start="6843" data-end="6920" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute end-1.5 top-1 z-2 md:end-2 md:top-1"></div><div class="relative"><div class="pe-11 pt-3"><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>Cannot create lease:
+Unit already has an overlapping active lease</span></code></pre></div></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></pre><hr data-start="6922" data-end="6925" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="6927" data-end="6950" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">7. ACID demonstration</h1><p dir="auto" data-start="6952" data-end="7050" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">This part is mainly<span class="Apple-converted-space"> </span><strong data-start="6972" data-end="7006">documentation rather than code</strong>, but the transaction above demonstrates it:</p><pre class="overflow-visible! px-0!" data-start="7052" data-end="7588" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute end-1.5 top-1 z-2 md:end-2 md:top-1"></div><div class="relative"><div class="pe-11 pt-3"><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>ATOMICITY
+-----------
+A rent payment consists of multiple operations.
+
+If one operation fails, ROLLBACK
+undoes all operations.
+
+CONSISTENCY
+-----------
+The database cannot contain an invalid payment or
+an invalid outstanding balance after the transaction.
+
+ISOLATION
+-----------
+SELECT ... FOR UPDATE prevents another transaction
+from changing the same lease balance while the payment
+transaction is being processed.
+
+DURABILITY
+-----------
+After COMMIT, the payment and balance update are
+permanently saved in the database.</span></code></pre></div></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></pre><hr data-start="7590" data-end="7593" style="font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><h1 dir="auto" data-start="7595" data-end="7626" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">8. Suggested GitHub structure</h1><p dir="auto" data-start="7628" data-end="7678" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;">You can put the code in your repository like this:</p><pre class="overflow-visible! px-0!" data-start="7680" data-end="7985" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute end-1.5 top-1 z-2 md:end-2 md:top-1"></div><div class="relative"><div class="pe-11 pt-3"><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span>PropertyLink/
+│
+├── database/
+│   ├── triggers/
+│   │   └── lease_validation.sql
+│   │
+│   ├── procedures/
+│   │   ├── process_rent_payment.sql
+│   │   ├── post_rent_charge.sql
+│   │   └── calculate_outstanding_balance.sql
+│   │
+│   └── tests/
+│       └── transaction_tests.sql
+│
+└── README.md</span></code></pre></div></div></div></div></div></div></div></div></div><div class=""><div class=""></div></div></div></div></div></div></pre><h3 dir="auto" data-start="7987" data-end="8002" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><span role="text"><code data-start="7991" data-end="8002">README.md</code></span></h3><pre class="overflow-visible! px-0!" data-start="8004" data-end="9074" style="caret-color: rgb(0, 0, 0); color: rgb(0, 0, 0); font-style: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: auto; text-align: start; text-indent: 0px; text-transform: none; widows: auto; word-spacing: 0px; -webkit-tap-highlight-color: rgba(26, 26, 26, 0.3); -webkit-text-size-adjust: auto; -webkit-text-stroke-width: 0px; text-decoration: none;"><div class="relative w-full mt-4 mb-1"><div class=""><div class="contents"><div class="border border-token-border-light border-radius-3xl corner-superellipse/1.1 rounded-3xl"><div class="relative h-full w-full border-radius-3xl bg-(--code-block-surface) corner-superellipse/1.1 overflow-clip rounded-3xl [--code-block-surface:var(--bg-elevated-secondary)] dark:[--code-block-surface:var(--composer-surface-primary)] lxnfua_clipPathFallback"><div class="pointer-events-none absolute inset-x-4 top-12 bottom-4"><div class="pointer-events-none sticky z-40 shrink-0 z-1!"><div class="sticky bg-token-border-light"></div></div></div><div class="relative"><div class="h-full min-h-0 min-w-0"><div class="h-full min-h-0 min-w-0"><div class=""><div class="relative"><div class=""><div class="relative z-0 flex max-w-full"><div id="code-block-viewer" dir="ltr" class="q9tKkq_viewer cm-editor z-10 light:cm-light dark:cm-light flex h-full w-full flex-col items-stretch ͼd ͼr"><div class="cm-scroller"><pre class="cm-content q9tKkq_readonly m-0"><code><span># PropertyLink - Business Logic &amp; Transactions
+
+## Business Logic &amp; Transactions Lead
+
+This module implements the database business rules and
+transactions for the PropertyLink system.
+
+## Implemented Features
+
+1. Prevent overlapping active leases.
+2. Process rent payments using database transactions.
+3. Post rent charges.
+4. Calculate outstanding balances.
+5. Use COMMIT and ROLLBACK for transaction control.
+6. Test transaction failure scenarios.
+
+## Transaction Control
+
+The rent payment transaction uses:
+
+- START TRANSACTION
+- COMMIT
+- ROLLBACK
+- SELECT ... FOR UPDATE
+
+## ACID
+
+### Atomicity
+All payment operations succeed together or are rolled back.
+
+### Consistency
+Business rules prevent invalid lease and payment records.
+
+### Isolation
+Rows are locked while the payment transaction is being processed.
+
+### Durability
+Committed transactions remain saved in the database.
+
+## Testing
+
+Failure scenarios include:
+
+- Invalid lease ID
+- Negative payment amount
+- Overlapping active lease
+
+The transaction is rolled back whenever an error occurs.</span></code></pre></div></div></div></div></div></div></div></div></div></div></div></div></div></div></pre>
